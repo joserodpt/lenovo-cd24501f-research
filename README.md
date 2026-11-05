@@ -27,6 +27,8 @@ There are two big routes; this guide uses the second, more reliable one:
 | **A) Patch boot + root** | Magisk-patched boot, adbd-on-TCP, root shell | Requires AVB bypass; fragile boot with Android Things |
 | **B) Offline `userdata` injection** ← *used here* | Edit the ext4 `userdata` image with `debugfs`, flash it back | No root needed; stock boot; app becomes home; also enables adb-over-Wi-Fi |
 
+> A complete, working first app is included: [`app/`](app/) — **Device Diag**, a read-only device-info dashboard (plus a multi-touch test and input/USB device inspector). Build it with [`app/build.sh`](app/build.sh), register it per §6, and flash. It's an ideal "does the whole pipeline work?" check before writing your real app.
+
 ---
 
 ## 2. Device facts you need
@@ -236,7 +238,7 @@ See [`examples/AndroidManifest.xml`](examples/AndroidManifest.xml).
 
 ### 7.2 Build pipeline (no Gradle needed)
 
-`aapt2 link` → `javac` → `d8` → `zipalign` → `apksigner`. See [`examples/build.sh`](examples/build.sh).
+`aapt2 link` → `javac` → `d8` → `zipalign` → `apksigner`. See [`examples/build.sh`](examples/build.sh). The included [`app/`](app/) builds this way with [`app/build.sh`](app/build.sh).
 
 ### 7.3 Wi-Fi is configured **in-app**, not by injection
 

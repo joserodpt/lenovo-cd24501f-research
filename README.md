@@ -36,6 +36,8 @@ There are two big routes; this guide uses the second, more reliable one:
 | Thing | Value |
 | --- | --- |
 | Model | Lenovo Smart Clock gen 1, **CD-24501F** ("cube") |
+| Launch | Announced at **CES, January 2019**; on sale in the US **spring 2019** (MSRP $79.99) |
+| Legacy since | **January 2021**, when Google ended Android Things for new non-commercial projects (console shut down **5 Jan 2022**). No official end-of-life date found for the Smart Clock itself. In April 2023 Google stopped updating third-party Assistant smart displays, but the Smart Clock wasn't named. Treat the firmware as frozen. |
 | SoC | MediaTek **MT8167** (`HW code 0x8167`) |
 | OS | **Android Things 8.1.0**, userspace **armv7a (32-bit)** |
 | eMMC | ~7.3 GiB user area, A/B slots |

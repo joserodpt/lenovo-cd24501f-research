@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal kiosk/home-screen app for the offline userdata route.
+  - package MUST match the <package name=...> in packages.xml
+  - landscape, IOT_LAUNCHER category = how Android Things resolves Home
+  - all permissions are "normal" (granted on adb install, and listed in packages.xml <perms>)
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.kiosk"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="27" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application android:label="Kiosk" android:allowBackup="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|navigation|screenLayout|smallestScreenSize|uiMode|density|fontScale">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Android Things resolves the home screen via IOT_LAUNCHER at runtime -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.IOT_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

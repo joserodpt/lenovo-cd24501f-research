@@ -1,0 +1,64 @@
+# debugfs inject script (example) — offline userdata provisioning.
+# Apply with:  debugfs -w -f inject.debugfs userdata.custom.bin
+# Paths are relative to the userdata root (= /data on device).
+# Prereqs created alongside this file (see README §6.3):
+#   ctx_sys / ctx_prop / ctx_adbkeys / ctx_apk  — SELinux context strings, no trailing newline
+#   persist.adb.tcp.port (contains: 5555), persist.sys.usb.config (contains: adb)
+#   adb_keys (your host adbkey.pub), base.apk (your signed APK)
+#   settings_global_mod.xml, packages_mod.xml, package-restrictions_mod.xml
+
+# --- enable adb ---
+rm /system/users/0/settings_global.xml
+write settings_global_mod.xml /system/users/0/settings_global.xml
+sif /system/users/0/settings_global.xml mode 0100600
+sif /system/users/0/settings_global.xml uid 1000
+sif /system/users/0/settings_global.xml gid 1000
+ea_set -f ctx_sys /system/users/0/settings_global.xml security.selinux
+
+# --- adbd over TCP, started at boot ---
+write persist.adb.tcp.port /property/persist.adb.tcp.port
+sif /property/persist.adb.tcp.port mode 0100600
+sif /property/persist.adb.tcp.port uid 0
+sif /property/persist.adb.tcp.port gid 0
+ea_set -f ctx_prop /property/persist.adb.tcp.port security.selinux
+
+write persist.sys.usb.config /property/persist.sys.usb.config
+sif /property/persist.sys.usb.config mode 0100600
+sif /property/persist.sys.usb.config uid 0
+sif /property/persist.sys.usb.config gid 0
+ea_set -f ctx_prop /property/persist.sys.usb.config security.selinux
+
+# --- pre-authorize the host adb key ---
+write adb_keys /misc/adb/adb_keys
+sif /misc/adb/adb_keys mode 0100640
+sif /misc/adb/adb_keys uid 1000
+sif /misc/adb/adb_keys gid 2000
+ea_set -f ctx_adbkeys /misc/adb/adb_keys security.selinux
+
+# --- install the app (dir 0755, apk 0644, system:system) ---
+mkdir /app/com.example.kiosk-1
+sif /app/com.example.kiosk-1 mode 040755
+sif /app/com.example.kiosk-1 uid 1000
+sif /app/com.example.kiosk-1 gid 1000
+ea_set -f ctx_apk /app/com.example.kiosk-1 security.selinux
+write base.apk /app/com.example.kiosk-1/base.apk
+sif /app/com.example.kiosk-1/base.apk mode 0100644
+sif /app/com.example.kiosk-1/base.apk uid 1000
+sif /app/com.example.kiosk-1/base.apk gid 1000
+ea_set -f ctx_apk /app/com.example.kiosk-1/base.apk security.selinux
+
+# --- pre-register the app so PMS doesn't destroy it as "orphaned" ---
+rm /system/packages.xml
+write packages_mod.xml /system/packages.xml
+sif /system/packages.xml mode 0100660
+sif /system/packages.xml uid 1000
+sif /system/packages.xml gid 1000
+ea_set -f ctx_sys /system/packages.xml security.selinux
+
+# --- disable the stock launchers (enabled="2") ---
+rm /system/users/0/package-restrictions.xml
+write package-restrictions_mod.xml /system/users/0/package-restrictions.xml
+sif /system/users/0/package-restrictions.xml mode 0100660
+sif /system/users/0/package-restrictions.xml uid 1000
+sif /system/users/0/package-restrictions.xml gid 1000
+ea_set -f ctx_sys /system/users/0/package-restrictions.xml security.selinux

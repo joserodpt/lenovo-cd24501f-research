@@ -1,0 +1,33 @@
+<!--
+  The <package> element to add to /data/system/packages.xml, just before </packages>, so the
+  pre-installed APK is "known" and survives the SCAN_REQUIRE_KNOWN sweep (README §6.3-6.4).
+
+  Fill in before use:
+    userId       a free app uid (check the highest existing one in packages.xml and go above it)
+    cert index   the next free index (existing ones are reused by `index="N"` with no key=)
+    key          uppercase DER hex of your signing certificate:
+                 keytool -exportcert -keystore debug.jks -alias test -storepass android \
+                   | xxd -p | tr -d '\n' | tr a-f A-F
+
+  Also set the two <version ... fingerprint="..."> lines near the top of packages.xml to the
+  fingerprint of the SYSTEM slot you boot (README §6.5), or PMS runs an upgrade cleanup.
+-->
+<package name="com.example.kiosk"
+         codePath="/data/app/com.example.kiosk-1"
+         nativeLibraryPath="/data/app/com.example.kiosk-1/lib"
+         primaryCpuAbi="armeabi-v7a"
+         publicFlags="0" privateFlags="0"
+         ft="0" it="0" ut="0"
+         version="1" userId="10050">
+    <sigs count="1">
+        <cert index="11" key="REPLACE_WITH_UPPERCASE_DER_HEX_OF_YOUR_CERT" />
+    </sigs>
+    <perms>
+        <item name="android.permission.INTERNET" granted="true" flags="0" />
+        <item name="android.permission.ACCESS_NETWORK_STATE" granted="true" flags="0" />
+        <item name="android.permission.ACCESS_WIFI_STATE" granted="true" flags="0" />
+        <item name="android.permission.CHANGE_WIFI_STATE" granted="true" flags="0" />
+        <item name="android.permission.CHANGE_NETWORK_STATE" granted="true" flags="0" />
+        <item name="android.permission.WAKE_LOCK" granted="true" flags="0" />
+    </perms>
+</package>

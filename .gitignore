@@ -1,0 +1,24 @@
+# Never commit device images, backups, keys or secrets.
+dump/
+*.bin
+*.img
+flash.bin
+*.sha256
+
+# Signing keys / adb keys
+*.jks
+*.keystore
+adbkey
+adbkey.pub
+adb_keys
+
+# Credentials / local config
+*.zip
+.env
+secrets*
+
+# Build output
+build/
+*.apk
+*.dex
+*.class

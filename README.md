@@ -16,7 +16,7 @@ This guide documents unlocking and modifying a **Lenovo Smart Clock gen 1 (CD-24
 ## 1. What you can achieve
 
 - Boot the clock into **your own Android app** as the home screen.
-- Get **adb over Wi-Fi** (no USB adb possible — see §4).
+- Get **adb over Wi-Fi** (no USB adb possible — see [§4](#4-why-the-obvious-approaches-fail)).
 - Build a landscape kiosk WebView showing a Home Assistant dashboard (or any web UI).
 - Stop the device from auto-updating and from a `mediashell` crash loop.
 
@@ -27,7 +27,7 @@ There are two big routes; this guide uses the second, more reliable one:
 | **A) Patch boot + root** | Magisk-patched boot, adbd-on-TCP, root shell | Requires AVB bypass; fragile boot with Android Things |
 | **B) Offline `userdata` injection** ← *used here* | Edit the ext4 `userdata` image with `debugfs`, flash it back | No root needed; stock boot; app becomes home; also enables adb-over-Wi-Fi |
 
-> A complete, working first app is included: [`app/`](app/) — **Device Diag**, a read-only device-info dashboard (plus a multi-touch test and input/USB device inspector). Build it with [`app/build.sh`](app/build.sh), register it per §6, and flash. It's an ideal "does the whole pipeline work?" check before writing your real app.
+> A complete, working first app is included: [`app/`](app/) — **Device Diag**, a read-only device-info dashboard (plus a multi-touch test and input/USB device inspector). Build it with [`app/build.sh`](app/build.sh), register it per [§6](#6-the-core-trick--offline-userdata-provisioning-with-debugfs), and flash. It's an ideal "does the whole pipeline work?" check before writing your real app.
 
 ---
 
@@ -42,10 +42,10 @@ There are two big routes; this guide uses the second, more reliable one:
 | OS | **Android Things 8.1.0**, userspace **armv7a (32-bit)** |
 | eMMC | ~7.3 GiB user area, A/B slots |
 | Stock home launcher | `com.google.assistant.launcher` (in `/oem/app`) + `com.android.iotlauncher` |
-| Also registers HOME | `com.google.assistant.core` (remember this — see §10) |
+| Also registers HOME | `com.google.assistant.core` (remember this — see [§10](#10-post-setup-stop-updates-and-the-mediashell-crash-loop)) |
 | Stock WebView | Chromium **87.0.4280.101** (good enough for a modern web UI) |
 | USB port | **Host mode only** under Android (OTG ID pin pulled low) — no USB adb |
-| BootROM access | Works (Kamakiri exploit) |
+| BootROM access | Works ([Kamakiri](https://github.com/amonet-kamakiri/kamakiri) exploit) |
 
 ### Partition layout (relevant parts)
 
@@ -64,22 +64,22 @@ There are two big routes; this guide uses the second, more reliable one:
 ## 3. Tools
 
 **Linux host (Ubuntu/Zorin/Debian-based):**
-- `mtkclient` (BootROM exploit + flashing): `github.com/bkerler/mtkclient`
-- `e2fsprogs` (`debugfs`, `e2fsck`)
+- [`mtkclient`](https://github.com/bkerler/mtkclient) (BootROM exploit + flashing)
+- [`e2fsprogs`](https://e2fsprogs.sourceforge.net/) (`debugfs`, `e2fsck`)
 - `android-tools-adb`, `build-essential`, `python3-venv`
-- Android platform-tools (`fastboot`/`adb`)
+- Android [platform-tools](https://developer.android.com/tools/releases/platform-tools) (`fastboot`/`adb`)
 
 **Build toolchain for the app:**
-- JDK 17 (Temurin), Android platform API 27+ (`android.jar`), build-tools r34 (`aapt2`, `d8`, `zipalign`, `apksigner`)
+- JDK 17 ([Temurin](https://adoptium.net/)), Android platform API 27+ (`android.jar`), [build-tools](https://developer.android.com/tools/releases/build-tools) r34 (`aapt2`, `d8`, `zipalign`, `apksigner`)
 
 **Hardware (optional):**
 - A **1.8 V** USB-UART adapter (only if you want a hardware console; 3.3 V damages the SoC)
 
 **Upstream references:**
-- `bkerler/mtkclient`
-- `Informatic/xiaomi-x04g-research`
-- `untocodes/lenovo-cube-hacking` (authoritative notes: AVB.md, USB.md, Flashing.md)
-- `deadman96385/android_kernel_lenovo_mt8167s` + `things_mt8167s_som_dump`
+- [bkerler/mtkclient](https://github.com/bkerler/mtkclient)
+- [Informatic/xiaomi-x04g-research](https://github.com/Informatic/xiaomi-x04g-research)
+- [untocodes/lenovo-cube-hacking](https://github.com/untocodes/lenovo-cube-hacking) (authoritative notes: [AVB.md](https://github.com/untocodes/lenovo-cube-hacking/blob/main/notes/AVB.md), [USB.md](https://github.com/untocodes/lenovo-cube-hacking/blob/main/notes/USB.md), [Flashing.md](https://github.com/untocodes/lenovo-cube-hacking/blob/main/notes/Flashing.md))
+- [deadman96385/android_kernel_lenovo_mt8167s](https://github.com/deadman96385/android_kernel_lenovo_mt8167s) + [things_mt8167s_som_dump](https://github.com/deadman96385/things_mt8167s_som_dump)
 
 ---
 
@@ -124,7 +124,7 @@ python mtk.py da seccfg unlock         # allow writing partitions (V4 lockstate)
 ```
 Relock later with `python mtk.py da seccfg lock`.
 
-> **ATX AVB unlock** (`at_auth_unlock.py creds.zip`) is only needed if you go the **patched-boot route (§ route A)**. It is **not** needed for the offline userdata injection used here.
+> **ATX AVB unlock** (`at_auth_unlock.py creds.zip`) is only needed if you go the **patched-boot route ([§1, route A](#1-what-you-can-achieve))**. It is **not** needed for the offline userdata injection used here.
 
 ---
 
@@ -150,9 +150,9 @@ e2fsck -fy userdata.custom.bin
 | Trust our key | `/data/misc/adb/adb_keys` | host `adbkey.pub` | 1000:2000 `0640` | `u:object_r:adb_keys_file:s0` |
 | Install our app | `/data/app/<pkg>-1/base.apk` | the APK | 0644 system:system | `u:object_r:apk_data_file:s0` |
 | Pre-register app | `/data/system/packages.xml` | `<package>` + `<perms>` + `<sigs>` | 1000:1000 `0660` | `u:object_r:system_data_file:s0` |
-| Match fingerprint | `packages.xml` `<version>` entries | same as `system` build (see §6.5) | — | — |
+| Match fingerprint | `packages.xml` `<version>` entries | same as `system` build (see [§6.5](#65-match-the-build-fingerprint)) | — | — |
 | Disable stock launchers | `/data/system/users/0/package-restrictions.xml` | set their `enabled="2"` | 1000:1000 `0660` | `u:object_r:system_data_file:s0` |
-| Stop OTA | later, via adb (§8) | — | — | — |
+| Stop OTA | later, via adb ([§10](#10-post-setup-stop-updates-and-the-mediashell-crash-loop)) | — | — | — |
 
 > Persistent properties on this platform are **one file per property** in `/data/property/` — that's why a file containing `5555` is the whole setting.
 
@@ -195,7 +195,7 @@ Add a `<package>` element with:
 - `userId="10050"` (pick a free uid)
 - `nativeLibraryPath`, `primaryCpuAbi="armeabi-v7a"`, etc.
 - `<sigs><cert index="11" key="<DER hex of your signing cert>"/></sigs>` — a real cert so the signature check passes.
-- A `<perms>` block **listing every permission you need** (see §6.6).
+- A `<perms>` block **listing every permission you need** (see [§6.6](#66-grant-permissions-yourself)).
 
 See [`examples/packages-entry.xml`](examples/packages-entry.xml).
 
@@ -223,7 +223,7 @@ Without this you get e.g. `SecurityException: ... neither user 10050 nor current
 
 ### 6.7 Disable stock launchers
 
-In `/data/system/users/0/package-restrictions.xml`, set the stock launchers' `enabled="2"` so your app is the only `IOT_LAUNCHER` candidate. (In practice the "Select a home app" dialog also appears; see §7.)
+In `/data/system/users/0/package-restrictions.xml`, set the stock launchers' `enabled="2"` so your app is the only `IOT_LAUNCHER` candidate. (In practice the "Select a home app" dialog also appears; see [§8](#expected-signals).)
 
 ---
 
@@ -252,7 +252,7 @@ WifiManager.enableNetwork(netId, true);
 WifiManager.reconnect();
 ```
 
-This needs `CHANGE_WIFI_STATE` + `CHANGE_NETWORK_STATE` + `ACCESS_NETWORK_STATE` **granted via `packages.xml`** (§6.6). Add a `WifiLock` and keep the screen on to avoid dozing.
+This needs `CHANGE_WIFI_STATE` + `CHANGE_NETWORK_STATE` + `ACCESS_NETWORK_STATE` **granted via `packages.xml`** ([§6.6](#66-grant-permissions-yourself)). Add a `WifiLock` and keep the screen on to avoid dozing.
 
 ### 7.4 WebView kiosk
 
